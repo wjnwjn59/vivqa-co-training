@@ -1,0 +1,13 @@
+# paraphrasing.yaml
+# current: vlsp2023_train_data.json
+
+# Required parameters
+system_prompt: templates/paraphase_q/system_prompt.txt
+user_prompt: templates/paraphase_q/user_prompt.txt
+input_json: /mnt/VLAI_data/OpenViVQA/vlsp2023_train_data.json
+output_json: data/paraphrased/paraphased_train.json
+
+# Optional parameters
+device: cuda
+seed: 42
+log_path: logs/paraphrasing.log

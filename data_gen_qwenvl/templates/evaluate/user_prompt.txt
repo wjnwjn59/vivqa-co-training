@@ -1,17 +1,18 @@
-You are given an image along with a set of original annotated questions. Your task is to generate 3 questions in Vietnamese based on the content of the image and should not include any answers. Ensure that the generated questions are not too similar to, closely resemble, or paraphrase any of the original annotated questions.
+You are given an infographic image along with a list of Question–Answer–Explanation (QA) pairs. Your task is to judge from 0 to 100 how faithful and accurate the question and answer are to the information presented in the infographic. Rememmber to tell me the reason why you give that score in Vietnamese.
 
 Input:
-Image: {{ image_source }}
+- Image {{ image_source }}
 
-Original Annotated Questions:
 {% for pair in qa_pairs %}
-Question ID: {{ pair.questionId }}  
-Original Question: {{ pair.question }}  
+QA Pair ID: {{ pair.questionId }}  
+- Question: {{ pair.question }}  
+- Answer: {{ pair.answer }}  
+- Explain: {{ pair.explain }}  
 {% endfor %}
 
-
 Output Format:
-ID: [questionId]
-Generate Question 1: [Your 1st Generated Vietnamese Question]
-Generate Question 2: [Your 2nd Generated Vietnamese Question]
-Generate Question 3: [Your 3rd Generated Vietnamese Question]
+ID: [questionId] - Reason: [Brief justification in Vietnamese]
+Linguistic Score: [0–100]
+Question Grounding Score: [0–100]
+Answer Faithfulness Score: [0–100]
+

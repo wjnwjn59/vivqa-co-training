@@ -1,18 +1,23 @@
 from tqdm import tqdm
 import json
-from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
-from qwen_vl_utils import process_vision_info
 import os
 import torch
-from typing import Dict, Any
+from typing import Dict, Any, List
 from pathlib import Path
 import argparse
 import logging
-# Import functions from utils
-from utils.utils import (
-    set_seed, read_system_prompt, read_user_prompt, extract_paraphrase,
-    process_with_jinja_template, save_results_to_json, load_model, setup_logging
+import yaml
+from qwen_vl_utils import process_vision_info
+
+# Fix incorrect import path
+from src.utils import (
+    set_seed, read_system_prompt, read_user_prompt, format_output_json,
+    process_nested_questions_with_template, save_results_to_json, load_model, setup_logging
 )
+
+# Define global variables at module level
+model = None
+processor = None
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -22,7 +27,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def inference(question: str, image_path: str, system_instruction: str, user_prompt: str) -> str:
     """
-    Perform inference on an image-question pair using the Qwen2.5-VL model.
+    Perform inference with optimized performance.
     """
     global model, processor
     
@@ -42,6 +47,7 @@ def inference(question: str, image_path: str, system_instruction: str, user_prom
         )
         
         # Process vision information from messages
+        
         image_inputs, video_inputs = process_vision_info(messages)
         
         # Prepare inputs for the model
@@ -53,106 +59,110 @@ def inference(question: str, image_path: str, system_instruction: str, user_prom
             return_tensors="pt",
         ).to(device)
         
-        # Generate output tokens from the model
-        with torch.no_grad():
-            generated_ids = model.generate(**inputs, max_new_tokens=128)
+        # Use inference_mode for better performance than no_grad
+        with torch.inference_mode():
+            generated_ids = model.generate(
+                **inputs, 
+                max_new_tokens=128,
+                do_sample=False  # Deterministic generation is faster
+            )
         
         generated_ids_trimmed = [
             out_ids[len(in_ids):] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
         ]
         
-        # Decode the output tokens and extract the answer
+        # Decode the output tokens
         output_text = processor.batch_decode(
             generated_ids_trimmed,
             skip_special_tokens=True,
             clean_up_tokenization_spaces=False,
         )
         
-        raw_response = output_text[0]
-        # Extract the structured information
-        paraphrased_question = extract_paraphrase(raw_response)
+        return output_text[0]
         
-        return paraphrased_question if paraphrased_question else raw_response
     except Exception as e:
-        logger.error(f"Error during inference: {e}")
-        return f"Error processing question: {question}"
+        if logger.isEnabledFor(logging.ERROR):
+            logger.error(f"Error during inference: {e}")
+        return f"Error during inference: {str(e)}"
 
 def read_and_process_data(json_path: str, image_folder: str, system_instruction: str, user_prompt_template: str) -> Dict[str, Any]:
     """
-    Read JSON data with question IDs as keys, process each entry, and
-    generate paraphrased questions using the model.
+    Read JSON data with nested question structure, process each entry, and
+    generate alternative questions using the model.
     """
     try:
+        # Try using faster JSON library if available
+        try:
+            import ujson as json_lib
+        except ImportError:
+            import json as json_lib
+            
         # Convert paths to Path objects
         json_path = Path(json_path)
         image_folder = Path(image_folder)
         
         # Read the JSON data
         with json_path.open("r", encoding="utf-8") as f:
-            data = json.load(f)
+            data = json_lib.load(f)
+        
+        # Process nested questions and prepare for inference
+        processing_info = process_nested_questions_with_template(data, user_prompt_template, str(image_folder))
         
         # Create a dictionary to store results
-        results: Dict[str, Any] = {}
+        results = {}
         
         # Process each entry in the data
-        for question_id, entry in tqdm(data.items(), desc="Processing questions"):
+        for question_id, entry_info in tqdm(processing_info.items(), desc="Processing questions"):
             try:
-                # Extract fields
-                image_id = entry.get("image_id")
-                question = entry.get("question")
-                answer = entry.get("answer")
+                # Get image path and user prompt from processing info
+                image_path = entry_info["image_path"]
+                user_prompt = entry_info["user_prompt"]
                 
-                # Create the path to the image
-                image_path = image_folder / f"{int(image_id):012d}.jpg"
-                
-                # Generate user prompt from template
-                user_prompt = process_with_jinja_template(
-                    question_id, question, user_prompt_template
+                # Generate alternative questions
+                raw_response = inference(
+                    "Multiple questions", 
+                    str(image_path), 
+                    system_instruction, 
+                    user_prompt
                 )
                 
-                # Get raw response from model
-                raw_response = inference(question, str(image_path), system_instruction, user_prompt)
+                # Store the raw response for this question ID
+                results[question_id] = raw_response
                 
-                # Extract structured information
-                paraphrased_question = extract_paraphrase(raw_response)
-                
-                # Use extracted or raw response
-                paraphrase = paraphrased_question if paraphrased_question else raw_response
-                
-                # Store result with original data plus generated content
-                results[question_id] = {
-                    "image_id": image_id,
-                    "question": question,
-                    "answer": answer,
-                    "qwenvl_paraphrased": {
-                        "question_paraphrased": paraphrase
-                    }
-                }
+                # Periodically free GPU memory
+                if torch.cuda.is_available() and (int(question_id) % 10 == 0):
+                    torch.cuda.empty_cache()
+                    
             except Exception as e:
-                logger.error(f"Error processing question ID {question_id}: {e}")
+                if logger.isEnabledFor(logging.ERROR):
+                    logger.error(f"Error processing question ID {question_id}: {e}")
+                results[question_id] = f"Error: {str(e)}"
                 continue
-                
-        return results
+        
+        # Format the output according to the desired structure
+        formatted_output = format_output_json(data, results)
+        
+        return formatted_output
+        
     except Exception as e:
-        logger.error(f"Error processing data: {e}")
+        if logger.isEnabledFor(logging.ERROR):
+            logger.error(f"Error processing data: {e}")
         return {}
 
 def main() -> None:
-    """Main function to run the Qwen2.5-VL paraphrasing pipeline."""
+    """Main function to run the Qwen2.5-VL question generation pipeline."""
     # Create argument parser
-    parser = argparse.ArgumentParser(description='Qwen2.5-VL Inference for Question Paraphrasing')
+    parser = argparse.ArgumentParser(description='Qwen2.5-VL Inference for Question Generation')
     
-    # Required arguments
-    parser.add_argument('--system_prompt', type=str, required=True,
-                        help='Path to system prompt file')
-    parser.add_argument('--user_prompt', type=str, required=True,
-                        help='Path to user prompt template file')
-    parser.add_argument('--image_folder', type=str, required=True,
-                        help='Path to folder containing images')
-    parser.add_argument('--input_json', type=str, required=True,
-                        help='Path to input JSON file with questions')
-    parser.add_argument('--output_json', type=str, required=True,
-                        help='Path to output JSON file for results')
+    # Add config file argument
+    parser.add_argument('--config', type=str, help='Path to YAML config file')
+    
+    # Required arguments (now not required in CLI, but required overall)
+    parser.add_argument('--system_prompt', type=str, help='Path to system prompt file')
+    parser.add_argument('--user_prompt', type=str, help='Path to user prompt template file')
+    parser.add_argument('--image_folder', type=str, help='Path to folder containing images')
+    parser.add_argument('--input_json', type=str, help='Path to input JSON file with questions')
+    parser.add_argument('--output_json', type=str, help='Path to output JSON file for results')
     
     # Optional arguments
     parser.add_argument('--device', type=str, default='cuda', choices=['cuda', 'cpu'],
@@ -161,59 +171,103 @@ def main() -> None:
                         help='Random seed for reproducibility')
     parser.add_argument('--log_path', type=str, default='logs/qwenvl.log',
                         help='Path to log file (default: logs/qwenvl.log)')
+    parser.add_argument('--model_name', type=str, default='Qwen/Qwen2.5-VL-3B-Instruct',
+                        help='Model name or path')
+    parser.add_argument('--cache_dir', type=str, default='../../weight/vlm/qwen2.5-vl-3b-instruct',
+                        help='Directory where model weights are cached')
     
     args = parser.parse_args()
     
-    # Setup logging with the specified path
-    setup_logging(args.log_path)
+    # Load YAML config if provided
+    config = {}
+    if args.config:
+        try:
+            with open(args.config, 'r') as f:
+                config = yaml.safe_load(f)
+        except Exception as e:
+            print(f"Error loading YAML config: {e}")
+            return
     
-    # Set global device based on args if needed
+    # Convert args to a dictionary
+    args_dict = vars(args)
+    
+    # Create a merged configuration with CLI arguments taking precedence
+    merged_config = {}
+    for key in args_dict:
+        if key == 'config':  # Skip the config argument
+            continue
+        # Use CLI value if provided, otherwise use YAML value if present
+        if args_dict[key] is not None:
+            merged_config[key] = args_dict[key]
+        elif key in config:
+            merged_config[key] = config[key]
+    
+    # Check if all required arguments are present
+    required_args = ['system_prompt', 'user_prompt', 'image_folder', 'input_json', 'output_json']
+    missing_args = [arg for arg in required_args if arg not in merged_config]
+    if missing_args:
+        print(f"Missing required arguments: {', '.join(missing_args)}")
+        parser.print_help()
+        return
+    
+    # Setup logging with the specified path
+    log_path = merged_config.get('log_path', 'logs/qwenvl.log')
+    setup_logging(log_path)
+    
+    # Set global device based on merged config
     global device
-    if args.device == 'cuda' and torch.cuda.is_available():
+    device_str = merged_config.get('device', 'cuda')
+    if device_str == 'cuda' and torch.cuda.is_available():
         device = torch.device('cuda')
     else:
         device = torch.device('cpu')
     
     # Set random seed
-    set_seed(args.seed)
+    seed = merged_config.get('seed', 42)
+    set_seed(seed)
     
     try:
-        # Load model and processor using hardcoded values
+        # Load model and processor
         global model, processor
-        model_name = 'Qwen/Qwen2.5-VL-3B-Instruct'
-        cache_dir = '../../weight/vlm/qwen2.5-vl-3b-instruct'
-        model, processor = load_model(model_name, cache_dir)
+        model_name = merged_config.get('model_name', 'Qwen/Qwen2.5-VL-3B-Instruct')
+        cache_dir = merged_config.get('cache_dir', '../../weight/vlm/qwen2.5-vl-3b-instruct')
+        
+        # Load model
+        model, processor = load_model(model_name, cache_dir, device)
         
         # Read prompt files
-        system_instruction = read_system_prompt(args.system_prompt)
-        user_prompt_template = read_user_prompt(args.user_prompt)
+        system_instruction = read_system_prompt(merged_config['system_prompt'])
+        user_prompt_template = read_user_prompt(merged_config['user_prompt'])
         
         if not system_instruction:
             logger.warning("System prompt is empty. Using default instruction.")
-            system_instruction = "You are a helpful assistant that generates paraphrases of questions."
+            system_instruction = "You are a helpful assistant that generates alternative questions."
         
         if not user_prompt_template:
             logger.warning("User prompt template is empty. Using default template.")
             user_prompt_template = """
             {% for pair in qa_pairs %}
-            Question ID: {{ pair.questionId }}  
-            Original Question: {{ pair.question }}  
+            Question ID: {{ pair.questionId }}
+            Original Question: {{ pair.question }}
             {% endfor %}
             """
         
         # Process data
         results = read_and_process_data(
-            args.input_json, 
-            args.image_folder,
+            merged_config['input_json'],
+            merged_config['image_folder'],
             system_instruction,
             user_prompt_template
         )
         
         # Save results
-        save_results_to_json(results, args.output_json)
+        save_results_to_json(results, merged_config['output_json'])
         
+        logger.info(f"Processing completed successfully! Results saved to {merged_config['output_json']}")
+    
     except Exception as e:
-        logger.error(f"Error in main execution: {e}")
+        if logger.isEnabledFor(logging.ERROR):
+            logger.error(f"Error in main execution: {e}")
         raise
 
 if __name__ == "__main__":

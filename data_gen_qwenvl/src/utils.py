@@ -1,5 +1,5 @@
 # utils.py
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional, Tuple, List
 import torch
 import jinja2
 import logging
@@ -192,3 +192,118 @@ def setup_logging(log_path: str) -> None:
     root_logger.setLevel(logging.INFO)
     
     logger.info(f"Logging configured to {log_path}")
+
+# Function to extract questions from nested format
+
+def extract_questions_from_nested_format(data: Dict[str, Any]) -> List[Dict]:
+    """
+    Extract questions from nested 'original_question' format to a flat list.
+    """
+    qa_pairs = []
+    
+    for question_id, entry in data.items():
+        if "original_question" in entry:
+            # Extract each question from the nested structure
+            for q_key, q_text in entry["original_question"].items():
+                if q_text.strip():  # Only include non-empty questions
+                    # Create a unique sub-ID by combining the main ID and question number
+                    sub_id = f"{question_id}_{q_key.replace('question_', '')}"
+                    qa_pairs.append({
+                        "questionId": sub_id,
+                        "question": q_text,
+                        "main_id": question_id  # Keep track of the parent ID
+                    })
+                    
+    return qa_pairs
+
+def process_nested_questions_with_template(data: Dict[str, Any], template_content: str, 
+                                          image_folder: str) -> Dict[str, Dict]:
+    """
+    Process each entry in the nested question format and prepare for inference.
+    """
+    processing_info = {}
+    environment = jinja2.Environment()
+    template = environment.from_string(template_content)
+    
+    for question_id, entry in data.items():
+        image_id = entry.get("image_id")
+        image_path = os.path.join(image_folder, f"{int(image_id):012d}.jpg")
+        
+        # Extract questions for this entry
+        entry_questions = []
+        for q_key, q_text in entry["original_question"].items():
+            if q_text.strip():  # Only include non-empty questions
+                entry_questions.append({
+                    "questionId": f"{question_id}_{q_key.replace('question_', '')}",
+                    "question": q_text
+                })
+        
+        # Create user prompt using template
+        user_prompt = template.render(qa_pairs=entry_questions, image_source=image_path)
+        
+        # Store processing info
+        processing_info[question_id] = {
+            "image_id": image_id,
+            "image_path": image_path,
+            "questions": entry_questions,
+            "user_prompt": user_prompt
+        }
+    
+    return processing_info
+
+def extract_generated_questions(text: str) -> list:
+    """
+    Extracts generated questions from the model response.
+    
+    Expected format:
+    Generate Question 1: [Your 1st Generated Vietnamese Question]
+    Generate Question 2: [Your 2nd Generated Vietnamese Question]
+    Generate Question 3: [Your 3rd Generated Vietnamese Question]
+    """
+    pattern = r"Generate Question (\d+): (.+?)(?=Generate Question \d+:|$)"
+    matches = re.findall(pattern, text, re.DOTALL)
+    
+    if matches:
+        return [question.strip() for _, question in matches]
+    else:
+        return []
+
+def format_output_json(input_data: Dict[str, Any], 
+                       generated_responses: Dict[str, str]) -> Dict[str, Any]:
+    """
+    Format the output JSON according to the specified structure.
+    """
+    output_data = {}
+    
+    for question_id, entry in input_data.items():
+        output_entry = {
+            "image_id": entry["image_id"],
+            "original_question": entry["original_question"],
+            "question_generated": {}
+        }
+        
+        # Get number of original questions to determine how many alternate questions to format
+        num_questions = len([q for q in entry["original_question"].values() if q.strip()])
+        
+        # Get the model response for this entry
+        response = generated_responses.get(question_id, "")
+        
+        # Extract the generated questions from the response
+        pattern = r"Generate Question (\d+): (.+?)(?=Generate Question \d+:|$)"
+        matches = re.findall(pattern, response, re.DOTALL)
+        
+        # Format extracted questions
+        for i, (num, question) in enumerate(matches, 1):
+            if i <= num_questions:
+                alternate_key = f"alternate_question_{i}"
+                output_entry["question_generated"][alternate_key] = question.strip()
+        
+        # Fill in any missing alternate questions
+        for i in range(1, num_questions + 1):
+            alternate_key = f"alternate_question_{i}"
+            if alternate_key not in output_entry["question_generated"]:
+                output_entry["question_generated"][alternate_key] = ""
+        
+        output_data[question_id] = output_entry
+    
+    return output_data

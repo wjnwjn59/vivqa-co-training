@@ -1,0 +1,14 @@
+# generation.yaml
+# current: vlsp2023_train_data.json
+
+# Required parameters
+system_prompt: templates/generate_q/system_prompt.txt  # Path to system prompt file
+user_prompt: templates/generate_q/user_prompt.txt  # Path to user prompt template file
+image_folder: /mnt/VLAI_data/OpenViVQA/training-images/  # Path to folder containing images
+input_json:   # Using your existing input path
+output_json: data/generated/generated_train.json  # Using your dedup_final_json
+
+# Optional parameters
+device: cuda  # Device to run inference on (cuda or cpu)
+seed: 42  # Random seed for reproducibility
+log_path: logs/generation.log  # Using your existing log_file
