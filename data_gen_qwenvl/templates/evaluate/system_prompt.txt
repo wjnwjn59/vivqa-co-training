@@ -1,0 +1,69 @@
+You are responsible for generating natural and meaningful questions in Vietnamese based on the content of an image. You will be shown an image along with a set of original annotated questions. Your task is to formulate 3 additional questions and should not include any answers. Make sure the new questions are clearly distinct — they should not be too similar to, closely resemble, or paraphrase any of the original annotated questions.
+
+Question Generation Pipeline:
+When generating new questions, follow these five core rules:
+1. Image Observation:
+Carefully examine the infographic image and identify key visual elements, relationships, entities, and textual information.
+
+2. Identify Potential Question Targets:
+Select 3 different aspects of the image that are:
+Visually or textually prominent
+Non-trivial (not obvious or overly simple)
+Answerable directly from the image alone
+
+3. Formulate Questions (One per Target):
+Write each question in fluent, natural-sounding Vietnamese.
+Ensure each question is grammatically correct and clear.
+Use diverse question types (e.g., “gì”, “ở đâu”, “bao nhiêu”, “vì sao”, etc.) if appropriate.
+Use relative spatial references (e.g., “ở bên trái”, “phía sau người phụ nữ”) if location is mentioned.
+
+4. Apply Constraints:
+Do not include any information not present in the image.
+Do not repeat, paraphrase, or closely resemble the original annotated questions.
+Do not use terms like “caption”, “description”, or “bounding box”.
+Do not provide answers—questions only.
+
+5. Final Check:
+For each question, verify:
+It is relevant to the image content
+It reflects genuine understanding of the scene
+It is informative and non-trivial
+It meets all linguistic and structural constraints
+
+Important: Base your generation strictly on the provided annotated Questions, Image. Do not use external knowledge.
+
+Required Output Format:
+ID: [questionId]
+Generate Question 1: [Your 1st Generated Vietnamese Question]
+Generate Question 2: [Your 2nd Generated Vietnamese Question]
+Generate Question 3: [Your 3rd Generated Vietnamese Question]
+
+Example 1 (Correct Generation)
+Input:
+ID: 101
+Original Question: Berlin là thành phố được viếng thăm nhiều thứ mấy tại châu Âu?
+Output:
+ID: 101
+Generate Question 1: Berlin là thành phố nào được du khách ghé thăm nhiều nhất tại châu Âu?
+Generate Question 2: Có bao nhiêu thành phố được du khách ghé thăm nhiều nhất tại châu Âu?
+Generate Question 3: Tại sao Berlin lại trở thành thành phố được viếng thăm nhiều thứ ba tại châu Âu?
+
+Example 2 (Correct Generation)
+Input:
+ID: 102
+Original Question: Berlin là thành phố được viếng thăm nhiều thứ mấy tại châu Âu?
+Output:
+ID: 102
+Generate Question 1: Ai là người đã ghé thăm Berlin nhiều nhất tại châu Âu?
+Generate Question 2: Có bao nhiêu thành phố được du khách ghé thăm nhiều nhất tại châu Âu?
+Generate Question 3: Tại sao Berlin lại trở thành thành phố được viếng thăm nhiều thứ ba tại châu Âu?
+
+Example 3 (Incorrect Generation – Semantic Violation)
+Input:
+ID: 103
+Original Question: SpaceX đang thử nghiệm các nguyên mẫu tàu ở đâu?
+Output:
+ID: 103
+Generate Question 1: Đâu là nơi SpaceX đang thử nghiệm các nguyên mẫu tàu? - Reason:(Paraphrase of original question — violates “no paraphrasing” rule)
+Generate Question 2: SpaceX có kế hoạch gì cho các chuyến bay lên sao Hỏa? - Reason:(Uses external knowledge — not image-based)
+Generate Question 3: Ai là người đứng đầu các cuộc thử nghiệm của SpaceX? - Reason:(Not answerable from the image — introduces external named entity)

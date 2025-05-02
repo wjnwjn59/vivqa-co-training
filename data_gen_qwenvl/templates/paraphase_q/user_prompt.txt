@@ -1,0 +1,11 @@
+You are given a list of questions written in Vietnamese. Your task is to paraphrase each question, keeping the meaning faithful to the original while rewriting it using different Vietnamese phrasing.
+
+Input:
+{% for pair in qa_pairs %}
+Question ID: {{ pair.questionId }}  
+Original Question: {{ pair.question }}  
+{% endfor %}
+
+Output Format:
+ID: [questionId]
+Paraphrased Question: [Your Paraphrased Vietnamese Question]

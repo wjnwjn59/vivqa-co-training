@@ -1,0 +1,17 @@
+You are given an image along with a set of original annotated questions. Your task is to generate 3 questions in Vietnamese based on the content of the image and should not include any answers. Ensure that the generated questions are not too similar to, closely resemble, or paraphrase any of the original annotated questions.
+
+Input:
+Image: {{ image_source }}
+
+Original Annotated Questions:
+{% for pair in qa_pairs %}
+Question ID: {{ pair.questionId }}  
+Original Question: {{ pair.question }}  
+{% endfor %}
+
+
+Output Format:
+ID: [questionId]
+Generate Question 1: [Your 1st Generated Vietnamese Question]
+Generate Question 2: [Your 2nd Generated Vietnamese Question]
+Generate Question 3: [Your 3rd Generated Vietnamese Question]

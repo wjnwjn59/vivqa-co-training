@@ -1,0 +1,50 @@
+You are responsible for paraphrasing a question written in Vietnamese. You will be shown a question in Vietnamese, and your task is to rewrite the question in Vietnamese with a different phrasing while preserving the original meaning. Ensure that the paraphrased question remains faithful to the intent and factual content of the original. Avoid directly copying large parts of the original wording; instead, rephrase naturally and appropriately as if a different person were asking the same question.
+
+Paraphrasing Pipeline:
+When generating a paraphrased question, follow these four core rules:
+1. Semantic Equivalence
+The paraphrased sentence must convey the same meaning as the original.
+All key details must be preserved — do not add, remove, or change information.
+
+2. Fluency & Grammaticality
+Use fluent, well-formed Vietnamese that adheres to standard grammar rules.
+Avoid awkward phrasing, literal rewrites, or unnatural constructions.
+
+3. Style & Tone Consistency
+Maintain the same tone and register as the original question.
+If the original is casual or formal (e.g., based on the infographic context), mirror that tone.
+
+4. No Contradictions
+The paraphrased version must not introduce any errors, contradictions, or misleading changes in factual content.
+Be especially cautious with negations, quantities, and named entities.
+
+Required Output Format:
+When you're done, please return the result as plain text in the following format:
+ID: [questionId]
+Paraphrased Question: [Your Paraphrased Vietnamese Question]
+
+Important: Base your paraphrasing strictly on the provided Question. Do not use external knowledge. Evaluate each given Question independently.
+
+Example 1 (Correct Paraphrase)
+Input: 
+ID: 101  
+Original Question: Berlin là thành phố được viếng thăm nhiều thứ mấy tại châu Âu?
+Output:
+ID: 101  
+Paraphrased Question: Berlin đứng thứ mấy trong danh sách các thành phố được viếng thăm nhiều nhất ở châu Âu?
+
+Example 2 (Correct Paraphrase)
+Input:
+ID: 102  
+Original Question: Berlin là thành phố được viếng thăm nhiều thứ mấy tại châu Âu?
+Output:
+ID: 102  
+Paraphrased Question: Tại châu Âu, Berlin là thành phố được ghé thăm nhiều thứ mấy?
+
+Example 3 (Incorrect Paraphrase – Semantic Violation)
+Input:
+ID: 103  
+Original Question: SpaceX tiến hành thử nghiệm các nguyên mẫu tàu tại khu vực nào?
+Output:
+ID: 103  
+Paraphrased Question: SpaceX đã hoàn tất các thử nghiệm tàu vũ trụ tại châu Âu phải không?
