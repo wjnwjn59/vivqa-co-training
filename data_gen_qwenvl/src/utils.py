@@ -95,8 +95,8 @@ def process_with_jinja_template(question_id: str, question: str, template_conten
     try:
         environment = jinja2.Environment()
         template = environment.from_string(template_content)
-        qa_pairs = [{"questionId": question_id, "question": question}]
-        user_prompt = template.render(qa_pairs=qa_pairs)
+        questions = [{"questionId": question_id, "question": question}]
+        user_prompt = template.render(questions=questions)
         return user_prompt
     except jinja2.exceptions.TemplateError as e:
         logger.error(f"Jinja2 template error: {e}")
@@ -199,7 +199,7 @@ def extract_questions_from_nested_format(data: Dict[str, Any]) -> List[Dict]:
     """
     Extract questions from nested 'original_question' format to a flat list.
     """
-    qa_pairs = []
+    questions = []
     
     for question_id, entry in data.items():
         if "original_question" in entry:
@@ -208,13 +208,13 @@ def extract_questions_from_nested_format(data: Dict[str, Any]) -> List[Dict]:
                 if q_text.strip():  # Only include non-empty questions
                     # Create a unique sub-ID by combining the main ID and question number
                     sub_id = f"{question_id}_{q_key.replace('question_', '')}"
-                    qa_pairs.append({
+                    questions.append({
                         "questionId": sub_id,
                         "question": q_text,
                         "main_id": question_id  # Keep track of the parent ID
                     })
                     
-    return qa_pairs
+    return questions
 
 def process_nested_questions_with_template(data: Dict[str, Any], template_content: str, 
                                           image_folder: str) -> Dict[str, Dict]:
@@ -234,12 +234,14 @@ def process_nested_questions_with_template(data: Dict[str, Any], template_conten
         for q_key, q_text in entry["original_question"].items():
             if q_text.strip():  # Only include non-empty questions
                 entry_questions.append({
-                    "questionId": f"{question_id}_{q_key.replace('question_', '')}",
-                    "question": q_text
+                    "imageId": image_id,  # Changed from "questionId" to "imageId"
+                    "question": q_text,
+                    # Keep the original questionId for reference in processing_info
+                    "_questionId": f"{question_id}_{q_key.replace('question_', '')}"
                 })
         
-        # Create user prompt using template
-        user_prompt = template.render(qa_pairs=entry_questions, image_source=image_path)
+        # Create user prompt using template - note the changed variable name (questions not qa_pairs)
+        user_prompt = template.render(questions=entry_questions, image_source=image_path)
         
         # Store processing info
         processing_info[question_id] = {

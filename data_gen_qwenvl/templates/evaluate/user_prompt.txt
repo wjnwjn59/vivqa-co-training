@@ -1,18 +1,21 @@
-You are given an infographic image along with a list of Question–Answer–Explanation (QA) pairs. Your task is to judge from 0 to 100 how faithful and accurate the question and answer are to the information presented in the infographic. Rememmber to tell me the reason why you give that score in Vietnamese.
+You are given an image along with a list of generated questions (in Vietnamese). Your task is to judge how faithful, accurate, and grounded each question is to the visual information presented in the image.
+
+You must assign a numerical score from 0 to 10 for each question, based on how well it reflects the actual content of the image. You must also provide a short justification in Vietnamese explaining your score.
 
 Input:
-- Image {{ image_source }}
+Image {{ image_source }}
 
-{% for pair in qa_pairs %}
-QA Pair ID: {{ pair.questionId }}  
-- Question: {{ pair.question }}  
-- Answer: {{ pair.answer }}  
-- Explain: {{ pair.explain }}  
+Original Annotated Questions:
+{% for q in questions %}
+image ID: {{ q.imageId }}  
+Original Question: {{ q.question }}  
 {% endfor %}
 
-Output Format:
-ID: [questionId] - Reason: [Brief justification in Vietnamese]
-Linguistic Score: [0–100]
-Question Grounding Score: [0–100]
-Answer Faithfulness Score: [0–100]
+Required Output Format:
+When you're done, please return the result as plain text in the following format:
+ID: [questionId]  
+Reason: [Your Vietnamese justification from Part C]  
+Linguistic Score: [Part A Score]  
+Image Grounding Score: [Part B Score]
+
 

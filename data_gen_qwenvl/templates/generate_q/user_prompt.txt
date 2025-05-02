@@ -4,14 +4,14 @@ Input:
 Image: {{ image_source }}
 
 Original Annotated Questions:
-{% for pair in qa_pairs %}
-Question ID: {{ pair.questionId }}  
-Original Question: {{ pair.question }}  
+{% for q in questions %}
+image ID: {{ q.imageId }}  
+Original Question: {{ q.question }}  
 {% endfor %}
 
 
 Output Format:
-ID: [questionId]
+ID: [imageId]
 Generate Question 1: [Your 1st Generated Vietnamese Question]
 Generate Question 2: [Your 2nd Generated Vietnamese Question]
 Generate Question 3: [Your 3rd Generated Vietnamese Question]
