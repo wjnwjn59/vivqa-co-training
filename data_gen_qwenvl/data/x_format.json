@@ -15,9 +15,10 @@
             "question_1": "cửa hàng trường điệp có địa chỉ là ở đâu ?",
             "question_2": "Trong ảnh có bao nhiêu người đàn ông đang đứng?",
             "question_3": ""
-        },
+        },  
         "question_generated":
         {
+            "question_paraphrase": "cửa hàng trường điệp có địa chỉ là ở đâu ?",
             "alternate_question_1": "cửa hàng trường điệp có địa chỉ là ở đâu ?",
             "alternate_question_2": "Trong ảnh có bao nhiêu người đàn ông đang đứng?",
             "alternate_question_3": ""

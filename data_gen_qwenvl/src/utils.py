@@ -59,6 +59,8 @@ def read_user_prompt(file_path: str) -> str:
         logger.error(f"Error reading file: {e}")
         return ""
 
+
+# For paraphrase.py
 def extract_paraphrase(text: str):
     """
     Extracts the question ID and paraphrased question from the structured text response.
@@ -193,8 +195,7 @@ def setup_logging(log_path: str) -> None:
     
     logger.info(f"Logging configured to {log_path}")
 
-# Function to extract questions from nested format
-
+# For Generate.py
 def extract_questions_from_nested_format(data: Dict[str, Any]) -> List[Dict]:
     """
     Extract questions from nested 'original_question' format to a flat list.
@@ -309,3 +310,50 @@ def format_output_json(input_data: Dict[str, Any],
         output_data[question_id] = output_entry
     
     return output_data
+
+
+# For Evaluation.py 
+def process_generated_questions_with_template(data: Dict[str, Any], template_content: str,
+                                             image_folder: str) -> Dict[str, Dict]:
+    """
+    Process questions from the question_generated field and prepare for evaluation.
+    
+    Args:
+        data: Input data with question_generated field
+        template_content: Jinja2 template content
+        image_folder: Path to the folder containing images
+        
+    Returns:
+        Dict containing processed information for evaluation
+    """
+    processing_info = {}
+    environment = jinja2.Environment()
+    template = environment.from_string(template_content)
+
+    for question_id, entry in data.items():
+        image_id = entry.get("image_id")
+        image_path = os.path.join(image_folder, f"{int(image_id):012d}.jpg")
+        
+        # Extract questions from question_generated instead of original_question
+        entry_questions = []
+        if "question_generated" in entry:
+            for q_key, q_text in entry["question_generated"].items():
+                if q_text.strip():  # Only include non-empty questions
+                    entry_questions.append({
+                        "imageId": image_id,
+                        "question": q_text,
+                        "_questionId": f"{question_id}_{q_key}"
+                    })
+            
+            # Create user prompt using template
+            user_prompt = template.render(questions=entry_questions, image_source=image_path)
+            
+            # Store processing info
+            processing_info[question_id] = {
+                "image_id": image_id,
+                "image_path": image_path,
+                "questions": entry_questions,
+                "user_prompt": user_prompt
+            }
+        
+    return processing_info

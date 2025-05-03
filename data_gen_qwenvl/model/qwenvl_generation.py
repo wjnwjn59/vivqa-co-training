@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 # Set device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def inference(question: str, image_path: str, system_instruction: str, user_prompt: str) -> str:
+def inference(image_path: str, system_instruction: str, user_prompt: str) -> str:
     """
     Perform inference with optimized performance.
     """
@@ -120,7 +120,6 @@ def read_and_process_data(json_path: str, image_folder: str, system_instruction:
                 
                 # Generate alternative questions
                 raw_response = inference(
-                    "Multiple questions", 
                     str(image_path), 
                     system_instruction, 
                     user_prompt

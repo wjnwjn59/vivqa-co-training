@@ -5,10 +5,10 @@ You must assign a numerical score from 0 to 10 for each question, based on how w
 Input:
 Image {{ image_source }}
 
-Original Annotated Questions:
+Generated Questions:
 {% for q in questions %}
 image ID: {{ q.imageId }}  
-Original Question: {{ q.question }}  
+Generated Question: {{ q.question }}  
 {% endfor %}
 
 Required Output Format:

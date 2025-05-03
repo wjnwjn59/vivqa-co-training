@@ -5,7 +5,7 @@
 system_prompt: templates/generate_q/system_prompt.txt  # Path to system prompt file
 user_prompt: templates/generate_q/user_prompt.txt  # Path to user prompt template file
 image_folder: /mnt/VLAI_data/OpenViVQA/training-images/  # Path to folder containing images
-input_json:   # Using your existing input path
+input_json: data/extract_q/train_q_extracted.json  # Using your existing input path
 output_json: data/generated/generated_train.json  # Using your dedup_final_json
 
 # Optional parameters

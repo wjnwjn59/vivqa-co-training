@@ -23,7 +23,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Configure logging
 logger = logging.getLogger(__name__)
 
-def inference(question: str, system_instruction: str, user_prompt: str) -> str:
+def inference(system_instruction: str, user_prompt: str) -> str:
     """
     Perform inference with optimized performance.
     """
@@ -122,7 +122,7 @@ def read_and_process_data(json_path: str, system_instruction: str, user_prompt_t
                 )
                 
                 # Get raw response from model
-                raw_response = inference(question, system_instruction, user_prompt)
+                raw_response = inference(system_instruction, user_prompt)
                 
                 # Extract structured information
                 paraphrased_question = extract_paraphrase(raw_response)
