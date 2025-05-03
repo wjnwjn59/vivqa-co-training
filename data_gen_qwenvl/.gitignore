@@ -1,4 +1,2 @@
 .env
-data/extract_q/dev_q_extracted.json
-data/extract_q/train_q_extracted.json
-data/extract_q/test_q_extracted.json
+data/
