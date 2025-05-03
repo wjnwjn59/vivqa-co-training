@@ -1,4 +1,4 @@
-# Vietnamese Visual Question Answering Project
+# QwenVL 2.5 3B Instruct OpenViVQA Data Generating Project
 
 This project provides a pipeline for processing, generating, evaluating, and managing Vietnamese visual question-answering (VQA) data using the Qwen2.5-VL multimodal model and PhoBERT for semantic similarity detection.
 
