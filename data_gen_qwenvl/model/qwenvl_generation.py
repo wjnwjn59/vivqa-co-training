@@ -8,6 +8,7 @@ import argparse
 import logging
 import yaml
 from qwen_vl_utils import process_vision_info
+import json as json_lib
 
 # Fix incorrect import path
 from src.utils import (
@@ -62,8 +63,9 @@ def inference(image_path: str, system_instruction: str, user_prompt: str) -> str
         with torch.inference_mode():
             generated_ids = model.generate(
                 **inputs, 
-                max_new_tokens=128,
-                do_sample=False  # Deterministic generation is faster
+                max_new_tokens=256,
+                temperature=0.0,
+                do_sample=False
             )
         
         generated_ids_trimmed = [
@@ -96,13 +98,7 @@ def read_and_process_data(
     generate alternative questions using the model.
     Periodically saves partial results to the output JSON after every 10 images.
     """
-    try:
-        # Try using faster JSON library if available
-        try:
-            import ujson as json_lib
-        except ImportError:
-            import json as json_lib
-            
+    try:            
         # Convert paths to Path objects
         json_path = Path(json_path)
         image_folder = Path(image_folder)
@@ -176,15 +172,15 @@ def main() -> None:
     parser.add_argument('--output_json', type=str, help='Path to output JSON file for results')
     
     # Optional arguments
-    parser.add_argument('--device', type=str, default='cuda', choices=['cuda', 'cpu'],
+    parser.add_argument('--device', type=str, default=None, choices=['cuda', 'cpu'],
                         help='Device to run inference on (default: cuda)')
-    parser.add_argument('--seed', type=int, default=42,
+    parser.add_argument('--seed', type=int, default=None,
                         help='Random seed for reproducibility')
     parser.add_argument('--log_path', type=str, default=None,
                         help='Path to log file (default: logs/qwenvl.log)')
-    parser.add_argument('--model_name', type=str, default='Qwen/Qwen2.5-VL-3B-Instruct',
+    parser.add_argument('--model_name', type=str, default=None,
                         help='Model name or path')
-    parser.add_argument('--cache_dir', type=str, default='../../weight/vlm/qwen2.5-vl-3b-instruct',
+    parser.add_argument('--cache_dir', type=str, default=None,
                         help='Directory where model weights are cached')
     
     args = parser.parse_args()
