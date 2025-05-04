@@ -1,36 +1,60 @@
-You are responsible for generating natural and meaningful questions in Vietnamese based on the content of an image. You will be shown an image along with a set of original annotated questions. Your task is to formulate 3 additional questions and should not include any answers. Make sure the new questions are clearly distinct — they should not be too similar to, closely resemble, or paraphrase any of the original annotated questions.
+You are responsible for generating natural and meaningful questions in Vietnamese based on the visual and textual content of an image. You will be shown an image along with its original annotated questions. Your task is to formulate 3 brand-new questions and must not include any answers. Under no circumstances should your new questions re-use, paraphrase, or closely resemble any of the original ones.
 
 Question Generation Pipeline:
-When generating new questions, follow these five core rules:
-1. Image Observation:
-Carefully examine the infographic image and identify key visual elements, relationships, entities, and textual information.
+When generating new questions, follow these six core rules:
+1. Scene Observation:
+Carefully examine the entire image with a focus on secondary, background, or contextual elements rather than the central or primary subject. List all the distinct objects, supporting entities, spatial relationships, background components, minor text labels, color accents and environmental features present in the periphery or context of the image.
+Include any nuanced visual cues that may contribute to a broader understanding of the scene or offer opportunities for more unique and non-repetitive question generation. Do not assume or infer anything not directly visible or written in the image.
 
-2. Identify Potential Question Targets:
-Select 3 different aspects of the image that are:
-Visually or textually prominent
-Non-trivial (not obvious or overly simple)
-Answerable directly from the image alone
+2. Question Target Selection:
+From the peripheral or background elements identified, select 1 to 3 notable aspects (such as secondary objects, spatial arrangements, supporting interactions, side labels, background activity, or environmental settings) that are visually or textually present and can be directly inferred or answered from the image itself. 
+Ensure that these question targets avoid duplicating central themes and instead highlight contextual insights that are often overlooked. Can be answered exclusively from the image, without needing prior knowledge or assumptions.
+No quotation marks (“ ”) inside the caption.
 
 3. Formulate Questions (One per Target):
 Write each question in fluent, natural-sounding Vietnamese.
 Ensure each question is grammatically correct and clear.
-Use diverse question types (e.g., “gì”, “ở đâu”, “bao nhiêu”, “vì sao”, etc.) if appropriate.
-Use relative spatial references (e.g., “ở bên trái”, “phía sau người phụ nữ”) if location is mentioned.
+All the questions must be grounded entirely in what is visually or textually present in the image.
+No quotation marks (“ ”) inside the caption.
+Pick exactly one of these five question‐types:
+3.1 Object Recognition
+Ask what objects or entities appear in the image.
+Example: “Trong ảnh có những loại phương tiện giao thông nào?”
 
-4. Apply Constraints:
+3.2 Attributes & Properties
+Ask about color, size, brand, label, etc. of an object.
+Example: “Chữ Vân Anh trên bảng hiệu được in với màu gì?”
+
+3.3 Quantity / Measurement
+Ask “how many,” etc.
+Example: “Có bao nhiêu người đang đợi xe buýt trên vỉa hè?”
+
+3.4 Spatial Relations
+Ask “where,” “relative to,” “to the left/right of,” etc.
+Example: “Cây xanh được trồng ở vị trí nào so với lối vào tòa nhà?”
+
+3.5 Actions / Activities
+Ask “what is [someone] doing,” “how is [an action] performed,” etc.
+Example: “Người đàn ông mặc áo xanh lá đang làm gì bên ghế đá?”
+
+4. Strict Lexical-Overlap Check
+Treat every original question as a “forbidden string.”
+Your new question must not contain any sequence of 3 or more consecutive words that appears in any original question.
+If such a substring is detected, immediately rewrite the question until it passes this test.
+
+5. Apply Constraints:
 Do not include any information not present in the image.
 Do not repeat, paraphrase, or closely resemble the original annotated questions.
 Do not use terms like “caption”, “description”, or “bounding box”.
-Do not provide answers—questions only.
 
-5. Final Check:
+6. Final Check:
 For each question, verify:
-It is relevant to the image content
-It reflects genuine understanding of the scene
-It is informative and non-trivial
-It meets all linguistic and structural constraints
+Relevant to the image
+Non-trivial (not mere labeling of objects already asked)
+Completely new (no semantic or lexical reuse)
+Answerable from the image alone
 
-Important: Base your generation strictly on the provided annotated Questions, Image. Do not use external knowledge.
+Important: Base your generation strictly on the provided annotated-Questions, Image. Do not use external knowledge.
 
 Required Output Format:
 ID: [questionId]
@@ -46,19 +70,9 @@ Output:
 ID: 101
 Generate Question 1: Berlin là thành phố nào được du khách ghé thăm nhiều nhất tại châu Âu?
 Generate Question 2: Có bao nhiêu thành phố được du khách ghé thăm nhiều nhất tại châu Âu?
-Generate Question 3: Tại sao Berlin lại trở thành thành phố được viếng thăm nhiều thứ ba tại châu Âu?
+Generate Question 3: Berlin đã trở thành thành phố được viếng thăm nhiều thứ ba tại châu Âu đúng không?
 
-Example 2 (Correct Generation)
-Input:
-ID: 102
-Original Question: Berlin là thành phố được viếng thăm nhiều thứ mấy tại châu Âu?
-Output:
-ID: 102
-Generate Question 1: Ai là người đã ghé thăm Berlin nhiều nhất tại châu Âu?
-Generate Question 2: Có bao nhiêu thành phố được du khách ghé thăm nhiều nhất tại châu Âu?
-Generate Question 3: Tại sao Berlin lại trở thành thành phố được viếng thăm nhiều thứ ba tại châu Âu?
-
-Example 3 (Incorrect Generation – Semantic Violation)
+Example 2 (Incorrect Generation – Semantic Violation)
 Input:
 ID: 103
 Original Question: SpaceX đang thử nghiệm các nguyên mẫu tàu ở đâu?

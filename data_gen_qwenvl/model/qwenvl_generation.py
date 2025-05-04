@@ -47,7 +47,6 @@ def inference(image_path: str, system_instruction: str, user_prompt: str) -> str
         )
         
         # Process vision information from messages
-        
         image_inputs, video_inputs = process_vision_info(messages)
         
         # Prepare inputs for the model
@@ -85,10 +84,17 @@ def inference(image_path: str, system_instruction: str, user_prompt: str) -> str
             logger.error(f"Error during inference: {e}")
         return f"Error during inference: {str(e)}"
 
-def read_and_process_data(json_path: str, image_folder: str, system_instruction: str, user_prompt_template: str) -> Dict[str, Any]:
+def read_and_process_data(
+    json_path: str,
+    image_folder: str,
+    system_instruction: str,
+    user_prompt_template: str,
+    output_json_path: str
+) -> Dict[str, Any]:
     """
     Read JSON data with nested question structure, process each entry, and
     generate alternative questions using the model.
+    Periodically saves partial results to the output JSON after every 10 images.
     """
     try:
         # Try using faster JSON library if available
@@ -131,6 +137,12 @@ def read_and_process_data(json_path: str, image_folder: str, system_instruction:
                 # Periodically free GPU memory
                 if torch.cuda.is_available() and (int(question_id) % 10 == 0):
                     torch.cuda.empty_cache()
+                
+                # After every 10 images, save partial results
+                if int(question_id) % 10 == 0:
+                    partial_output = format_output_json(data, results)
+                    save_results_to_json(partial_output, output_json_path)
+                    logger.info(f"Saved partial results up to question {question_id}")
                     
             except Exception as e:
                 if logger.isEnabledFor(logging.ERROR):
@@ -168,7 +180,7 @@ def main() -> None:
                         help='Device to run inference on (default: cuda)')
     parser.add_argument('--seed', type=int, default=42,
                         help='Random seed for reproducibility')
-    parser.add_argument('--log_path', type=str, default='logs/qwenvl.log',
+    parser.add_argument('--log_path', type=str, default=None,
                         help='Path to log file (default: logs/qwenvl.log)')
     parser.add_argument('--model_name', type=str, default='Qwen/Qwen2.5-VL-3B-Instruct',
                         help='Model name or path')
@@ -210,7 +222,7 @@ def main() -> None:
         return
     
     # Setup logging with the specified path
-    log_path = merged_config.get('log_path', 'logs/qwenvl.log')
+    log_path = merged_config.get('log_path', 'logs/generation.log')
     setup_logging(log_path)
     
     # Set global device based on merged config
@@ -251,15 +263,16 @@ def main() -> None:
             {% endfor %}
             """
         
-        # Process data
+        # Process data and save partial results periodically
         results = read_and_process_data(
             merged_config['input_json'],
             merged_config['image_folder'],
             system_instruction,
-            user_prompt_template
+            user_prompt_template,
+            merged_config['output_json']
         )
         
-        # Save results
+        # Save final results
         save_results_to_json(results, merged_config['output_json'])
         
         logger.info(f"Processing completed successfully! Results saved to {merged_config['output_json']}")

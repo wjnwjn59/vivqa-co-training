@@ -8,6 +8,7 @@ import argparse
 import logging
 import yaml
 from qwen_vl_utils import process_vision_info
+import sys
 
 # Fix import path
 from src.utils import (

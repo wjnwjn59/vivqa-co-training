@@ -277,7 +277,6 @@ def format_output_json(input_data: Dict[str, Any],
     Format the output JSON according to the specified structure.
     """
     output_data = {}
-    
     for question_id, entry in input_data.items():
         output_entry = {
             "image_id": entry["image_id"],
@@ -285,8 +284,8 @@ def format_output_json(input_data: Dict[str, Any],
             "question_generated": {}
         }
         
-        # Get number of original questions to determine how many alternate questions to format
-        num_questions = len([q for q in entry["original_question"].values() if q.strip()])
+        # Fix number of alternate questions to 3
+        num_questions = 3
         
         # Get the model response for this entry
         response = generated_responses.get(question_id, "")
@@ -296,12 +295,12 @@ def format_output_json(input_data: Dict[str, Any],
         matches = re.findall(pattern, response, re.DOTALL)
         
         # Format extracted questions
-        for i, (num, question) in enumerate(matches, 1):
+        for i, (_, question) in enumerate(matches, 1):
             if i <= num_questions:
                 alternate_key = f"alternate_question_{i}"
                 output_entry["question_generated"][alternate_key] = question.strip()
         
-        # Fill in any missing alternate questions
+        # Fill in any missing alternate questions up to 3
         for i in range(1, num_questions + 1):
             alternate_key = f"alternate_question_{i}"
             if alternate_key not in output_entry["question_generated"]:
