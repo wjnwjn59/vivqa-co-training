@@ -13,7 +13,8 @@ import sys
 # Fix import path
 from src.utils import (
     set_seed, read_system_prompt, read_user_prompt, extract_paraphrase, extract_questions_from_annotations,
-    process_with_jinja_template, save_results_to_json, load_model, setup_logging
+    process_with_jinja_template, save_results_to_json, load_model, setup_logging, load_existing_results,
+    filter_unprocessed_questions
 )
 
 # Define module-level variables
@@ -72,9 +73,13 @@ def read_and_process_data(json_path: str, system_instruction: str, user_prompt_t
         with json_path.open("r", encoding="utf-8") as f:
             data = json_lib.load(f)
         questions_data = extract_questions_from_annotations(data)
-        results: Dict[str, Any] = {}
+
+        # Load previous results and filter unprocessed
+        results = load_existing_results(output_json_path)
+        questions_data = filter_unprocessed_questions(questions_data, results)
+
         for idx, item in enumerate(tqdm(questions_data, desc="Processing questions")):
-            question_id = item["questionId"]
+            question_id = str(item["questionId"])
             question = item["question"]
             image_id = item.get("image_id")
             user_prompt = process_with_jinja_template(question_id, question, user_prompt_template)
@@ -88,15 +93,18 @@ def read_and_process_data(json_path: str, system_instruction: str, user_prompt_t
                     "question_paraphrased": paraphrase
                 }
             }
+
             if torch.cuda.is_available() and (idx + 1) % 10 == 0:
                 torch.cuda.empty_cache()
             if (idx + 1) % 20 == 0:
                 save_results_to_json(results, output_json_path)
                 logger.info(f"Autosaved {idx + 1} questions to {output_json_path}")
+
         return results
     except Exception as e:
         logger.error(f"Error processing data: {e}")
         return {}
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description='Qwen2.5-VL Inference for Question Paraphrasing')

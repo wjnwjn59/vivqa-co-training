@@ -224,6 +224,28 @@ def setup_logging(log_path: str) -> None:
     
     logger.info(f"Logging configured to {log_path}")
 
+def load_existing_results(output_json_path: str) -> Dict[str, Any]:
+    """
+    Loads existing results if the output file exists.
+    Returns a dictionary of processed question IDs.
+    """
+    results = {}
+    if Path(output_json_path).exists():
+        try:
+            with open(output_json_path, "r", encoding="utf-8") as f:
+                results = json.load(f)
+                logger.info(f"Loaded {len(results)} previously processed questions.")
+        except Exception as e:
+            logger.warning(f"Failed to load existing output JSON: {e}")
+    return results
+
+def filter_unprocessed_questions(questions_data: List[Dict[str, Any]], existing_results: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Filters out questions that have already been processed.
+    """
+    processed_ids = set(existing_results.keys())
+    return [item for item in questions_data if str(item["questionId"]) not in processed_ids]
+
 # For Generate.py
 def extract_questions_from_nested_format(data: Dict[str, Any]) -> List[Dict]:
     """
