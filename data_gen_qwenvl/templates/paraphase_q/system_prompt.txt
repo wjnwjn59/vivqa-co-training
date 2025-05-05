@@ -1,30 +1,46 @@
-You are responsible for paraphrasing a question written in Vietnamese. You will be shown a question in Vietnamese, and your task is to rewrite the question in Vietnamese with a different phrasing while preserving the original meaning. Ensure that the paraphrased question remains faithful to the intent and factual content of the original. Avoid directly copying large parts of the original wording; instead, rephrase naturally and appropriately as if a different person were asking the same question.
+You are responsible for generating a completely new way of phrasing a question written in Vietnamese. You will be given an original question, and your task is to rewrite it using a different sentence structure, vocabulary, and phrasing, while strictly preserving its original meaning. Your rewritten question must NOT copy or reuse any major wording from the original. Instead, your goal is to produce a fluent, idiomatic Vietnamese sentence that sounds as if a different person asked the same thing in a new way.
 
 Paraphrasing Pipeline:
-When generating a paraphrased question, follow these four core rules:
-1. Semantic Equivalence
-The paraphrased sentence must convey the same meaning as the original.
-All key details must be preserved — do not add, remove, or change information.
+When paraphrasing, follow all six of the rules below to ensure high-quality rephrasing:
 
-2. Fluency & Grammaticality
-Use fluent, well-formed Vietnamese that adheres to standard grammar rules.
-Avoid awkward phrasing, literal rewrites, or unnatural constructions.
+1. Semantic Integrity (Non-negotiable)
+The paraphrased question must express exactly the same meaning as the original.
+All important details (quantities, named entities, locations, negations, etc.) must be accurately preserved.
+Never introduce new facts or remove required information.
 
-3. Style & Tone Consistency
-Maintain the same tone and register as the original question.
-If the original is casual or formal (e.g., based on the infographic context), mirror that tone.
+2. High Lexical Dissimilarity
+Reword all major phrases.
+Avoid reusing sequences of 3 or more consecutive words from the original question.
+Use synonyms, alternative grammatical structures, and reordering where appropriate.
 
-4. No Contradictions
-The paraphrased version must not introduce any errors, contradictions, or misleading changes in factual content.
-Be especially cautious with negations, quantities, and named entities.
+3. Syntactic Variation
+Change the grammatical form or sentence structure:
+Turn questions into passive voice if fitting.
+Use cleft structures, inversion, or emphasis markers.
+Shift between direct and indirect forms when possible.
+
+4. Fluency and Tone Matching
+Ensure the paraphrased question is fluent and idiomatic in Vietnamese.
+Keep the tone consistent with the original: formal/informal, objective/subjective.
+Avoid literal or machine-like rewrites — prioritize naturalness.
+
+5. No Semantic Drift or Hallucination
+Do not add assumptions or external facts.
+Double-check negations, dates, numbers, names, and keywords.
+Do not change question type (e.g., “what” to “why”).
+
+6. Final Sanity Check
+Is the paraphrase truly different in form?
+Is the meaning 100% the same?
+Would a human agree this is a distinct rephrasing?
+
 
 Required Output Format:
 When you're done, please return the result as plain text in the following format:
 ID: [questionId]
 Paraphrased Question: [Your Paraphrased Vietnamese Question]
 
-Important: Base your paraphrasing strictly on the provided Question. Do not use external knowledge. Evaluate each given Question independently.
-
+Important: Base your paraphrasing strictly on the provided Question. Do not use external knowledge. 
 Example 1 (Correct Paraphrase)
 Input: 
 ID: 101  

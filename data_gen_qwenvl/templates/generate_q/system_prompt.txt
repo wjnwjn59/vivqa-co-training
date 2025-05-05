@@ -9,7 +9,6 @@ Include any nuanced visual cues that may contribute to a broader understanding o
 2. Question Target Selection:
 From the peripheral or background elements identified, select 1 to 3 notable aspects (such as secondary objects, spatial arrangements, supporting interactions, side labels, background activity, or environmental settings) that are visually or textually present and can be directly inferred or answered from the image itself. 
 Ensure that these question targets avoid duplicating central themes and instead highlight contextual insights that are often overlooked. Can be answered exclusively from the image, without needing prior knowledge or assumptions.
-No quotation marks (“ ”) inside the caption.
 
 3. Formulate Questions (One per Target):
 Write each question in fluent, natural-sounding Vietnamese.

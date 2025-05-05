@@ -1,4 +1,4 @@
-You are given a list of questions written in Vietnamese. Your task is to paraphrase each question, keeping the meaning faithful to the original while rewriting it using different Vietnamese phrasing.
+You are given a question written in Vietnamese. Your task is to paraphrase that question, keeping the meaning faithful to the original while rewriting it using different Vietnamese phrasing.
 
 Input:
 {% for q in questions %}
