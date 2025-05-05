@@ -61,6 +61,35 @@ def read_user_prompt(file_path: str) -> str:
 
 
 # For paraphrase.py
+def extract_questions_from_annotations(data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Extracts question entries from a COCO-style annotation structure.
+
+    Args:
+        data (dict): JSON with 'annotations' and 'images'
+
+    Returns:
+        List[Dict]: Each dict contains:
+            - questionId (str)
+            - question (str)
+            - image_id (int)
+    """
+    results = []
+    annotations = data.get("annotations", {})
+
+    for question_id, annotation in annotations.items():
+        question = annotation.get("question", "").strip()
+        image_index = annotation.get("image_id")
+
+        if question:
+            results.append({
+                "questionId": question_id,
+                "question": question,
+                "image_id": image_index
+            })
+
+    return results
+
 def extract_paraphrase(text: str):
     """
     Extracts the question ID and paraphrased question from the structured text response.
