@@ -21,7 +21,7 @@ Score (0–10)
 Goal: Judge how well the question is visually grounded in the image.
 Criteria:
 Visual Relevance: Refers to specific, visible elements (objects, actions, text, etc.)
-Answerability: Can be answered directly from the image alone
+Answerability (Priority): Must be clearly answerable using only visual information. Questions requiring outside knowledge or interpretation beyond what is visible must receive a low score.
 Specificity: Focuses on concrete visual details or relationships
 No Hallucination: Does not mention things that aren’t in the image
 Score (0–10)
