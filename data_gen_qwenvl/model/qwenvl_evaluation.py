@@ -9,8 +9,9 @@ import argparse
 import logging
 import yaml
 from qwen_vl_utils import process_vision_info
+import json as json_lib
 
-from utils import (
+from src.utils import (
     set_seed, read_system_prompt, read_user_prompt, 
     load_model, setup_logging, process_generated_questions_with_template
 )
@@ -69,31 +70,51 @@ def inference(image_path: str, system_instruction: str, user_prompt: str) -> str
         return f"Error during inference: {str(e)}"
 
 
-def extract_evaluation_result(response_text: str) -> Dict[str, Any]:
-    """Extract evaluation results from model response."""
-    result = {}
+def extract_evaluation_results(response_text: str) -> List[Dict[str, Any]]:
+    """Extract evaluation results for multiple questions from model response."""
+    # Split the response by question blocks
+    question_blocks = re.split(r'Generated Question:', response_text)[1:]  # Skip the first empty part
     
-    id_match = re.search(r"ID:\s*(\S+)", response_text)
+    results = []
+    image_id = None
+    
+    # Extract image ID if present
+    id_match = re.search(r"ID:\s*(\d+)", response_text)
     if id_match:
-        result["id"] = id_match.group(1).strip()
+        image_id = int(id_match.group(1))
     
-    reason_match = re.search(r"Reason:\s*(.*?)(?=Linguistic Score:|$)", response_text, re.DOTALL)
-    if reason_match:
-        result["reason"] = reason_match.group(1).strip()
+    # Process each question block
+    for block in question_blocks:
+        result = {}
+        if image_id:
+            result["ID"] = image_id
+        
+        # Extract question text
+        question_text = block.split('\n')[0].strip()
+        result["question_text"] = question_text
+        
+        # Extract reason
+        reason_match = re.search(r"Reason:\s*(.*?)(?=Linguistic Score:|$)", block, re.DOTALL)
+        if reason_match:
+            result["reason"] = reason_match.group(1).strip()
+        
+        # Extract scores
+        linguistic_match = re.search(r"Linguistic Score:\s*(\d+(?:\.\d+)?)", block)
+        if linguistic_match:
+            result["linguistic_score"] = float(linguistic_match.group(1))
+        
+        grounding_match = re.search(r"Image Grounding Score:\s*(\d+(?:\.\d+)?)", block)
+        if grounding_match:
+            result["image_grounding_score"] = float(grounding_match.group(1))
+        
+        # Calculate final score
+        if "linguistic_score" in result and "image_grounding_score" in result:
+            result["final_score"] = 0.2 * result["linguistic_score"] + 0.8 * result["image_grounding_score"]
+        
+        results.append(result)
     
-    linguistic_match = re.search(r"Linguistic Score:\s*(\d+(?:\.\d+)?)", response_text)
-    if linguistic_match:
-        result["linguistic_score"] = float(linguistic_match.group(1))
-    
-    grounding_match = re.search(r"Image Grounding Score:\s*(\d+(?:\.\d+)?)", response_text)
-    if grounding_match:
-        result["image_grounding_score"] = float(grounding_match.group(1))
-    
-    # Calculate final score
-    if "linguistic_score" in result and "image_grounding_score" in result:
-        result["final_score"] = 0.2 * result["linguistic_score"] + 0.8 * result["image_grounding_score"]
-    
-    return result
+    return results
+
 
 def save_results_to_json(data: Dict[str, Any], output_file: str) -> None:
     """Save results to JSON file."""
@@ -106,76 +127,117 @@ def save_results_to_json(data: Dict[str, Any], output_file: str) -> None:
         logger.error(f"Error saving results to {output_file}: {e}")
 
 def read_and_process_data(json_path: str, image_folder: str, system_instruction: str, 
-                         user_prompt_template: str) -> Tuple[Dict[str, Any], Dict[str, Any]]:
-    """Process questions and evaluate them."""
+                         user_prompt_template: str, output_path: str) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    """Process questions grouped by image_id and evaluate them."""
     try:
-        try:
-            import ujson as json_lib
-        except ImportError:
-            import json as json_lib
-        
         json_path = Path(json_path)
         image_folder = Path(image_folder)
-        
+        processed_images = 0
         with json_path.open("r", encoding="utf-8") as f:
             data = json_lib.load(f)
         
-        # Use the new function to process generated questions instead
+        # Ensure output directory exists
+        output_folder     = Path(output_path)
+        output_folder.mkdir(parents=True, exist_ok=True)
+        qualified_path     = output_folder / "qualified_questions_train.json"
+        not_qualified_path = output_folder / "not_qualified_questions_train.json"
+        
+        # Use the function to process generated questions - grouped by image_id
         processing_info = process_generated_questions_with_template(data, user_prompt_template, str(image_folder))
+        qualified_questions = []
+        not_qualified_questions = []
         
-        qualified_questions = {}
-        not_qualified_questions = {}
-        
-        for question_id, entry_info in tqdm(processing_info.items(), desc="Evaluating questions"):
+        # Process by image_id
+        for image_id, entry_info in tqdm(processing_info.items(), desc="Evaluating images"):
             try:
                 image_path = entry_info["image_path"]
                 user_prompt = entry_info["user_prompt"]
+                questions_list = entry_info["questions"]
                 
+                # Do inference with all questions for this image
                 raw_response = inference(
                     str(image_path),
                     system_instruction,
                     user_prompt
                 )
-                
-                evaluation_result = extract_evaluation_result(raw_response)
-                
-                if "final_score" in evaluation_result:
-                    # Include both original and generated questions in the result
-                    evaluation_result["original_question"] = data[question_id]["original_question"]
-                    evaluation_result["question_generated"] = data[question_id]["question_generated"]
-                    evaluation_result["image_id"] = data[question_id]["image_id"]
+
+                # Extract evaluation results for all questions
+                question_evaluations = extract_evaluation_results(raw_response)
+
+                # Match extracted evaluations to questions based on text similarity
+                for question_data in questions_list:
+                    question = question_data["question"]
+                    # Use get() to safely access the key or fall back to another field
+                    question_key = question_data.get("key", question_data.get("questionId", "generated_question"))
                     
-                    # Sort based on final score
-                    if evaluation_result["final_score"] > 8:
-                        qualified_questions[question_id] = evaluation_result
-                    else:
-                        not_qualified_questions[question_id] = evaluation_result
-                else:
-                    logger.warning(f"Failed to extract evaluation for question ID {question_id}")
-                    not_qualified_questions[question_id] = {
-                        "original_question": data[question_id]["original_question"],
-                        "question_generated": data[question_id]["question_generated"],
-                        "image_id": data[question_id]["image_id"],
-                        "error": "Failed to extract evaluation"
+                    # Find matching evaluation
+                    matching_eval = None
+                    for eval_result in question_evaluations:
+                        if question.lower() in eval_result.get("question_text", "").lower():
+                            matching_eval = eval_result
+                            break
+                    
+                    if not matching_eval:
+                        # If no match found, use empty values
+                        matching_eval = {"reason": "", "linguistic_score": 0, "image_grounding_score": 0, "final_score": 0}
+                    
+                    # Create result for this question
+                    result = {
+                        "ID": int(image_id),
+                        question_key: question,
+                        "reason": matching_eval.get("reason", ""),
+                        "linguistic_score": int(matching_eval.get("linguistic_score", 0)),
+                        "image_grounding_score": int(matching_eval.get("image_grounding_score", 0)),
+                        "final_score": int(matching_eval.get("final_score", 0))
                     }
+                    
+                    # Categorize based on final score
+                    if result["final_score"] >= 7:
+                        qualified_questions.append(result)
+                    else:
+                        not_qualified_questions.append(result)
+
+                processed_images += 1
                 
-                if torch.cuda.is_available() and (int(question_id) % 10 == 0):
-                    torch.cuda.empty_cache()
+                # Save after every 10 images
+                if processed_images % 10 == 0:
+                    with qualified_path.open("w", encoding="utf-8") as f:
+                        json.dump(qualified_questions, f, ensure_ascii=False, indent=2)
+                    
+                    with not_qualified_path.open("w", encoding="utf-8") as f:
+                        json.dump(not_qualified_questions, f, ensure_ascii=False, indent=2)
+                    
+                    logger.info(f"Saved results after processing {processed_images} images")
+                    
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
                     
             except Exception as e:
-                logger.error(f"Error processing question ID {question_id}: {e}")
-                not_qualified_questions[question_id] = {
-                    "original_question": data[question_id]["original_question"],
-                    "question_generated": data[question_id]["question_generated"],
-                    "image_id": data[question_id]["image_id"],
-                    "error": str(e)
-                }
+                logger.error(f"Error processing image ID {image_id}: {e}")
+                
+                # Create error entries for each question in this image
+                if "questions" in entry_info:
+                    for question_data in entry_info["questions"]:
+                        question = question_data["question"]
+                        # Use same approach for error handling
+                        question_key = question_data.get("key", question_data.get("questionId", "generated_question"))
+                        
+                        not_qualified_questions.append({
+                            "ID": int(image_id),
+                            question_key: question,
+                            "reason": f"Error: {str(e)}",
+                            "linguistic_score": 0,
+                            "image_grounding_score": 0,
+                            "final_score": 0
+                        })
         
         return qualified_questions, not_qualified_questions
         
     except Exception as e:
         logger.error(f"Error processing data: {e}")
-        return {}, {}
+        return [], []
+
+
     
 def main() -> None:
     """Main function."""
@@ -189,9 +251,9 @@ def main() -> None:
     parser.add_argument('--output_dir', type=str, help='Directory to save output JSON files')
     parser.add_argument('--device', type=str, default='cuda', choices=['cuda', 'cpu'])
     parser.add_argument('--seed', type=int, default=42)
-    parser.add_argument('--log_path', type=str, default='logs/evaluation.log')
-    parser.add_argument('--model_name', type=str, default='Qwen/Qwen2.5-VL-3B-Instruct')
-    parser.add_argument('--cache_dir', type=str, default='../../weight/vlm/qwen2.5-vl-3b-instruct')
+    parser.add_argument('--log_path', type=str, default=None)
+    parser.add_argument('--model_name', type=str, default=None)
+    parser.add_argument('--cache_dir', type=str, default=None)
     
     args = parser.parse_args()
     
@@ -241,12 +303,12 @@ def main() -> None:
             merged_config['input_json'],
             merged_config['image_folder'],
             system_instruction,
-            user_prompt_template
+            user_prompt_template,
+            merged_config['output_dir'] 
         )
         
         # Save results
-        save_results_to_json(qualified_questions, "data/evaluated/qualified_q.json")
-        save_results_to_json(not_qualified_questions, "data/evaluated/not_qualified_q.json")
+
         
         logger.info(f"Evaluation completed! Qualified: {len(qualified_questions)}, Not qualified: {len(not_qualified_questions)}")
         

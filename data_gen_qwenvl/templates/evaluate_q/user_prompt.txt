@@ -13,7 +13,8 @@ Generated Question: {{ q.question }}
 
 Required Output Format:
 When you're done, please return the result as plain text in the following format:
-ID: [questionId]  
+ID: [imageID]  
+Generated Question: [Input Generated Question]
 Reason: [Your Vietnamese justification from Part C]  
 Linguistic Score: [Part A Score]  
 Image Grounding Score: [Part B Score]

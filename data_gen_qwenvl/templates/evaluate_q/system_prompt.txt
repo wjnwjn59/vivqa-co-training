@@ -40,14 +40,22 @@ Output: Write a concise justification (in Vietnamese) explaining whether the que
 
 Required Output Format:
 When you're done, please return the result as plain text in the following format:
-ID: [questionId]  
+ID: [imageId]  
+Generated Question: [Input Generated Question]
 Reason: [Your Vietnamese justification from Part C]  
 Linguistic Score: [Part A Score]  
 Image Grounding Score: [Part B Score]
 
 Example Output:
 ID: 207  
+Generated Question 1: Người đàn ông đang làm gì gần cái cây?  
 Reason: Câu hỏi liên quan trực tiếp đến người đàn ông đang tưới cây, hành động này thấy rõ trong hình.  
+Linguistic Score: 9  
+Image Grounding Score: 10
+
+ID: 207  
+Generated Question 2: Anh ấy thích ăn món gì vào bữa sáng?  
+Reason: Câu hỏi này không liên quan đến nội dung hình, không dựa trên bất kỳ chi tiết nào trong ảnh.  
 Linguistic Score: 9  
 Image Grounding Score: 10
 

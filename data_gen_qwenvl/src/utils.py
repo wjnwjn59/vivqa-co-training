@@ -364,46 +364,76 @@ def format_output_json(input_data: Dict[str, Any],
 
 # For Evaluation.py 
 def process_generated_questions_with_template(data: Dict[str, Any], template_content: str,
-                                             image_folder: str) -> Dict[str, Dict]:
+                                           image_folder: str) -> Dict[str, Dict]:
     """
-    Process questions from the question_generated field and prepare for evaluation.
-    
-    Args:
-        data: Input data with question_generated field
-        template_content: Jinja2 template content
-        image_folder: Path to the folder containing images
-        
-    Returns:
-        Dict containing processed information for evaluation
+    Process questions from the qwenvl_generated/question_generated field and prepare for evaluation.
+    Uses Jinja2 for template rendering.
     """
     processing_info = {}
+    
+    # Extract qwenvl_generated questions (grouped by image_id)
+    grouped_questions = extract_qwenvl_generated_questions(data)
+    
+    # Create Jinja2 environment and load template
     environment = jinja2.Environment()
     template = environment.from_string(template_content)
-
-    for question_id, entry in data.items():
-        image_id = entry.get("image_id")
+    
+    for image_id, questions_list in grouped_questions.items():
+        # Find image file
         image_path = os.path.join(image_folder, f"{int(image_id):012d}.jpg")
+        if not os.path.exists(image_path):
+            # Try alternative formats
+            for ext in ['.jpg', '.jpeg', '.png']:
+                alt_path = os.path.join(image_folder, f"{image_id}{ext}")
+                if os.path.exists(alt_path):
+                    image_path = alt_path
+                    break
         
-        # Extract questions from question_generated instead of original_question
-        entry_questions = []
-        if "question_generated" in entry:
-            for q_key, q_text in entry["question_generated"].items():
-                if q_text.strip():  # Only include non-empty questions
-                    entry_questions.append({
-                        "imageId": image_id,
-                        "question": q_text,
-                        "_questionId": f"{question_id}_{q_key}"
-                    })
-            
-            # Create user prompt using template
-            user_prompt = template.render(questions=entry_questions, image_source=image_path)
-            
-            # Store processing info
-            processing_info[question_id] = {
-                "image_id": image_id,
-                "image_path": image_path,
-                "questions": entry_questions,
-                "user_prompt": user_prompt
-            }
+        if not os.path.exists(image_path):
+            logger.warning(f"Image not found for ID {image_id}")
+            continue
         
+        # Format user prompt with all questions for this image using Jinja2
+        user_prompt = template.render(questions=questions_list, image_source=image_path)
+        
+        # Store processing info with image_id as the key
+        processing_info[str(image_id)] = {
+            "image_id": image_id,
+            "image_path": image_path,
+            "questions": questions_list,
+            "user_prompt": user_prompt
+        }
+    
     return processing_info
+
+
+def extract_qwenvl_generated_questions(data: Dict[str, Any]) -> Dict[str, list]:
+    """
+    Extract all generated questions grouped by image_id from the input JSON structure.
+    
+    Args:
+        data: Input JSON data with qwenvl_generated questions
+        
+    Returns:
+        Dictionary mapping image_id to a list of question objects
+    """
+    grouped_questions = {}
+    
+    for entry_id, entry in data.items():
+        if "qwenvl_generated" in entry and "question_generated" in entry["qwenvl_generated"]:
+            image_id = entry.get("image_id")
+            generated_questions = entry["qwenvl_generated"]["question_generated"]
+            
+            # Initialize entry if not exists
+            if image_id not in grouped_questions:
+                grouped_questions[image_id] = []
+            
+            # Add all questions for this image_id with their question ID
+            for gen_q_id, gen_question in generated_questions.items():
+                grouped_questions[image_id].append({
+                    "imageId": image_id,
+                    "questionId": gen_q_id,  # Store the generated_question_X ID
+                    "question": gen_question
+                })
+    
+    return grouped_questions
