@@ -1,0 +1,15 @@
+# Python version requirement (add in documentation, not in this file)
+# Requires: Python >= 3.8
+
+torch>=1.7
+torchvision>=0.8
+
+opencv-python
+numpy
+pycocotools
+matplotlib
+onnxruntime
+onnx
+
+# Install Segment Anything from GitHub
+git+https://github.com/facebookresearch/segment-anything.git

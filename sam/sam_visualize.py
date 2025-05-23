@@ -48,7 +48,7 @@ def visualize_masks_from_jsonl(
             image_path = os.path.join(input_folder, filename)
             image = cv2.imread(image_path)
             if image is None:
-                print(f"⚠️ Cannot read image: {filename}")
+                print(f"Cannot read image: {filename}")
                 continue
 
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
