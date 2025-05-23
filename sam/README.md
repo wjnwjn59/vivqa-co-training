@@ -1,14 +1,43 @@
-# 📌 Segment Anything Mask Pipeline
+# Segment Anything Mask Pipeline
 
 This project provides a simple Python pipeline to:
 
-1. 🧠 Automatically **generate segmentation masks** using Meta's Segment Anything Model (SAM).
-2. 🎨 **Visualize masks** on images using random colors and alpha blending.
-3. 💾 Save results in compact COCO RLE format (`.jsonl` file).
+1. Automatically **generate segmentation masks** using Meta's Segment Anything Model (SAM).
+2. **Visualize masks** on images using random colors and alpha blending.
+3. Save results in compact COCO RLE format (`.jsonl` file).
 
 ---
 
-## 🚀 Usage
+## Dependencies
+
+- `opencv-python`
+- `numpy`
+- `pycocotools`
+- `segment-anything`
+
+Install Segment Anything:
+
+```bash
+pip install git+https://github.com/facebookresearch/segment-anything.git
+```
+
+Install dependencies:
+
+```bash
+pip install opencv-python pycocotools matplotlib onnxruntime onnx
+```
+
+## Download Model Checkpoints
+
+To use the Segment Anything Model (SAM), you need to download one of the official pre-trained checkpoints from Meta:
+
+**Available at**:  
+[https://github.com/facebookresearch/segment-anything?tab=readme-ov-file#model-checkpoints](https://github.com/facebookresearch/segment-anything?tab=readme-ov-file#model-checkpoints)
+
+### Recommended: ViT-H Checkpoint
+---
+
+## Usage
 
 ### 1. Generate RLE Masks
 
@@ -46,7 +75,7 @@ This overlays masks on images and saves them to an output folder.
 
 ---
 
-## 🧾 Output JSONL Format
+## Output JSONL Format
 
 Each line in the output file looks like:
 
@@ -69,26 +98,5 @@ Each line in the output file looks like:
 
 - `rle`: COCO-compatible run-length encoding
 - `score`: predicted IoU from SAM
-
----
-
-## 🛠 Dependencies
-
-- `opencv-python`
-- `numpy`
-- `pycocotools`
-- `segment-anything` (Meta’s SAM repo)
-
-Install Segment Anything:
-
-```bash
-pip install git+https://github.com/facebookresearch/segment-anything.git
-```
-
-Install dependencies:
-
-```bash
-pip install opencv-python pycocotools matplotlib onnxruntime onnx
-```
 
 ---
