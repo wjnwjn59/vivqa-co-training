@@ -13,7 +13,10 @@ def generate_masks_to_jsonl(
     use_cuda: bool = False
 ):
     # Create output directory if it does not exist
-    os.makedirs(os.path.dirname(output_jsonl_path), exist_ok=True)
+    output_dir = os.path.dirname(output_jsonl_path)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+
 
     # Load the SAM model with the specified checkpoint and model type
     sam = sam_model_registry[model_type](checkpoint=checkpoint_path)

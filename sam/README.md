@@ -6,6 +6,7 @@ This project provides a simple Python pipeline to:
 2. **Visualize masks** on images using random colors and alpha blending.
 3. Save results in compact COCO RLE format (`.jsonl` file).
 
+**The code requires python>=3.8, as well as pytorch>=1.7 and torchvision>=0.8.**
 ---
 
 ## Dependencies
@@ -34,7 +35,7 @@ To use the Segment Anything Model (SAM), you need to download one of the officia
 **Available at**:  
 [https://github.com/facebookresearch/segment-anything?tab=readme-ov-file#model-checkpoints](https://github.com/facebookresearch/segment-anything?tab=readme-ov-file#model-checkpoints)
 
-### Recommended: ViT-H Checkpoint
+**Recommended: ViT-H Checkpoint**
 ---
 
 ## Usage
