@@ -12,8 +12,16 @@ pip install -r requirements.txt
 export PYTHONPATH="./:$PYTHONPATH"
 ```
 
+## Usage
+To train a model with convetional supervised fine-tuning (SFT) setup on OpenViVQA dataset, run:
+```
+python src/training/train.py \
+    --dataset openvivqa \
+    --root-dir /path/to/dataset/dir \
+    --training-type base
+```
+
 ## To-do list
-- []
+- [x] Baseline LoRA training for any VLM.
 - [] Evaluation scripts for VQA.
-- [] Baseline LoRA training for any VLM.
 - [] Baseline LoRA Co-training for any VLM.
