@@ -60,7 +60,7 @@ if __name__ == "__main__":
     config = load_yaml_config("configs")
     # validate_config(config)
     logger.info("Configuration:\n%s", config)
-
+    logger.info("Arguments:\n%s", args)
 
     # Set device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
