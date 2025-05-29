@@ -103,6 +103,9 @@ if __name__ == "__main__":
         val_dataset=val_dataset,
         is_save_model=config["training"]["is_save_model"],
         data_collator=data_collator,
+        is_train_resp_only=config["training"]["is_train_resp_only"],
+        start_instruct_token=config["vqa_model"]["start_instruct_token"],
+        start_resp_token=config["vqa_model"]["start_resp_token"],
         device=device
     )
     trainer.train()

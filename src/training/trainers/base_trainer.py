@@ -7,7 +7,7 @@ from unsloth import FastVisionModel, is_bf16_supported
 from trl import SFTTrainer, SFTConfig
 from torch.utils.data import DataLoader
 from typing import Optional, Dict
-
+from unsloth.chat_templates import train_on_responses_only
 from unsloth.trainer import UnslothVisionDataCollator
 from src.utils.logger import logger
 
@@ -21,6 +21,9 @@ class BaseTrainer:
         val_dataset=None,
         is_save_model=True,
         data_collator=UnslothVisionDataCollator, 
+        is_train_resp_only=True,
+        start_instruct_token="<|im_start|>user",
+        start_resp_token="<|im_start|>assistant",
         device="cuda",
     ):
         self.trainer_config = trainer_config
@@ -31,6 +34,9 @@ class BaseTrainer:
         self.val_dataset = val_dataset
         self.is_save_model = is_save_model
         self.data_collator = data_collator
+        self.is_train_resp_only = is_train_resp_only
+        self.start_instruct_token = start_instruct_token
+        self.start_resp_token = start_resp_token
         
         # Prepare model for Unsloth training
         FastVisionModel.for_training(self.model)
@@ -51,6 +57,14 @@ class BaseTrainer:
             dataset_text_field = "",  
             args = self.sft_config,
         )
+    
+    def _apply_train_on_responses(self):
+        """Apply train_on_responses_only if configured"""
+        if self.is_train_resp_only:
+            logger.info("Applying train_on_responses_only template...")
+            self.trainer = train_on_responses_only(self.trainer, 
+                                                   instruction_part=self.start_instruct_token,
+                                                   response_part=self.start_resp_token)
 
     def _get_sft_config(self) -> SFTConfig:
         """Convert YAML config to SFTTrainer arguments"""
