@@ -4,10 +4,12 @@
 system_prompt: templates/evaluate_q/system_prompt.txt  # Path to system prompt file
 user_prompt: templates/evaluate_q/user_prompt.txt  # Path to user prompt template file
 image_folder: /mnt/VLAI_data/OpenViVQA/training-images/  # Path to folder containing images
-input_json: data/qwenvl_openvivqa/qwenvl_train.json  # Path to input JSON with generated questions
-output_dir: data/evaluated/  # Directory to save output JSON files
+input_json: data/qwenvl_openvivqa/qwenvl_train_filtered.json  # Path to input JSON with generated questions
+output_dir: data/evaluated/training  # Directory to save output JSON files
 
 # Optional parameters
 device: cuda  # Device to run inference on (cuda or cpu)
 seed: 42  # Random seed for reproducibility
-log_path: logs/evaluation.log  # Path to log file
+log_path: logs/evaluation_train.log  # Path to log file
+model_name: Qwen/Qwen2.5-VL-7B-Instruct
+cache_dir: ../../weight/vlm/qwen2.5-vl-7b-instruct

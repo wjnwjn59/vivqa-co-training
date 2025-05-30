@@ -191,6 +191,120 @@ def load_model(model_name: str, cache_dir: str, device) -> Tuple:
         logger.error(f"Error loading model: {e}")
         raise
 
+def load_model_unsloth(model_name: str, cache_dir: str, device) -> Tuple:
+    """
+    Load the Qwen2.5-VL model and processor.
+    
+    Args:
+        model_name (str): Name or path of the model
+        cache_dir (str): Directory to cache the model
+        device: The device to load the model on
+        
+    Returns:
+        tuple: (model, processor) loaded and configured
+    """
+    try:
+        # Free up GPU memory
+        torch.cuda.empty_cache()
+        
+        # Import here to avoid circular imports
+        from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
+        
+        # Load model
+        model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+            model_name, torch_dtype=torch.bfloat16, cache_dir=cache_dir,
+            trust_remote_code=True
+        ).to(device)
+        
+        # Set pixel range parameters for visual tokens
+        min_pixels = 256 * 28 * 28
+        max_pixels = 1280 * 28 * 28
+        
+        # Load processor
+        processor = AutoProcessor.from_pretrained(
+            "Qwen/Qwen2.5-VL-7B-Instruct",
+            min_pixels=min_pixels,
+            max_pixels=max_pixels,
+            use_fast=True,
+            cache_dir=cache_dir,
+            trust_remote_code=True
+        )
+        
+        return model, processor
+    except Exception as e:
+        logger.error(f"Error loading model: {e}")
+        raise
+
+def load_model_ovis(model_name: str, cache_dir: str, device) -> Tuple:
+    """
+    Load the Qwen2.5-VL model and processor.
+    
+    Args:
+        model_name (str): Name or path of the model
+        cache_dir (str): Directory to cache the model
+        device: The device to load the model on
+        
+    Returns:
+        tuple: (model, processor) loaded and configured
+    """
+    try:
+        # Free up GPU memory
+        torch.cuda.empty_cache()
+        
+        # Import here to avoid circular imports
+        from transformers import AutoModelForCausalLM,AutoConfig
+        config = AutoConfig.from_pretrained(model_name, trust_remote_code=True, cache_dir=cache_dir)
+        config.llm_attn_implementation = "eager"  # or "torch" to avoid flash_attn fallback
+        # Load model
+        model = AutoModelForCausalLM.from_pretrained(model_name,
+                                             torch_dtype=torch.bfloat16,
+                                             config=config,
+                                             multimodal_max_length=32768,
+                                             trust_remote_code=True,
+                                             cache_dir=cache_dir).to(device)
+        
+        return model
+    except Exception as e:
+        logger.error(f"Error loading model: {e}")
+        raise
+    
+def load_model_internvl(model_name: str, cache_dir: str, device) -> Tuple:
+    """
+    Load the Intern-VL 3 model and processor.
+    
+    Args:
+        model_name (str): Name or path of the model
+        cache_dir (str): Directory to cache the model
+        device: The device to load the model on
+        
+    Returns:
+        tuple: (model, processor) loaded and configured
+    """
+    try:
+        # Free up GPU memory
+        torch.cuda.empty_cache()
+        
+        # Import here to avoid circular imports
+        from transformers import AutoModel, AutoTokenizer
+        
+        # Load model
+        model = AutoModel.from_pretrained(
+                    model_name,
+                    cache_dir=cache_dir,
+                    torch_dtype=torch.bfloat16,
+                    low_cpu_mem_usage=True,
+                    use_flash_attn=True,
+                    trust_remote_code=True,
+                ).eval()  # add cuda
+        
+        tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True, use_fast=False)
+
+        
+        return model, tokenizer
+    except Exception as e:
+        logger.error(f"Error loading model: {e}")
+        raise
+
 def setup_logging(log_path: str) -> None:
     """
     Set up logging configuration.

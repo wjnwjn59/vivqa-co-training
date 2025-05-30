@@ -9,3 +9,7 @@ PyYAML
 jinja2
 tokenizers>=0.11.1,!=0.11.3
 torchvision
+bitsandbytes 
+accelerate
+einops
+timm

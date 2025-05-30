@@ -13,7 +13,7 @@ import sys
 # Fix import path
 from src.utils import (
     set_seed, read_system_prompt, read_user_prompt, extract_paraphrase, extract_questions_from_annotations,
-    process_with_jinja_template, save_results_to_json, load_model, setup_logging, load_existing_results,
+    process_with_jinja_template, save_results_to_json, load_model_unsloth, setup_logging, load_existing_results,
     filter_unprocessed_questions
 )
 
@@ -152,7 +152,7 @@ def main() -> None:
         global model, processor
         model_name = args.model_name or 'Qwen/Qwen2.5-VL-3B-Instruct'
         cache_dir = args.cache_dir or '../../weight/vlm/qwen2.5-vl-3b-instruct'
-        model, processor = load_model(model_name, cache_dir, device)
+        model, processor = load_model_unsloth(model_name, cache_dir, device)
 
         system_instruction = read_system_prompt(args.system_prompt)
         user_prompt_template = read_user_prompt(args.user_prompt)

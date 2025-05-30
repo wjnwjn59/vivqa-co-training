@@ -13,7 +13,7 @@ import json as json_lib
 # Fix incorrect import path
 from src.utils import (
     set_seed, read_system_prompt, read_user_prompt, format_output_json,
-    process_nested_questions_with_template, save_results_to_json, load_model, setup_logging
+    process_nested_questions_with_template, save_results_to_json, load_model_unsloth, setup_logging
 )
 
 # Define global variables at module level
@@ -240,7 +240,7 @@ def main() -> None:
         cache_dir = merged_config.get('cache_dir', '../../weight/vlm/qwen2.5-vl-3b-instruct')
         
         # Load model
-        model, processor = load_model(model_name, cache_dir, device)
+        model, processor = load_model_unsloth(model_name, cache_dir, device)
         
         # Read prompt files
         system_instruction = read_system_prompt(merged_config['system_prompt'])
