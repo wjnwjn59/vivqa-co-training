@@ -9,7 +9,7 @@ lora_config:
   loftq_config: None
   use_rslora: False
   target_modules: ["q_proj", "v_proj"]
-  finetune_vision_layers: True
+  finetune_vision_layers: false
   finetune_language_layers: True
   finetune_attention_modules: True
   finetune_mlp_modules: True

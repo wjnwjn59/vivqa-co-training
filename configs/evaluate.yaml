@@ -1,0 +1,17 @@
+benchmark: "openvivqa"
+subset: "dev"
+base_model_path: "/mnt/dataset1/pretrained_fm/unsloth_Qwen2.5-VL-3B-Instruct"
+lora_path: "/home/thangdd/workspace/vivqa-co-training/training_outputs/final_model"
+instruct_template: "vivqa_instruct_prompt_v1.jinja"
+dtype: bfloat16
+quantization:
+  is_quantize: true
+  quantization_config:
+    load_in_4bit: true
+    load_in_8bit: false
+generation_config:
+  do_sample: false
+  max_new_tokens: 128
+  temperature: 0.1
+  top_p: 1.0
+  top_k: 50
