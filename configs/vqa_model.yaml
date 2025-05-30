@@ -1,0 +1,19 @@
+# VLM for VQA model configuration
+name: "/mnt/dataset1/pretrained_fm/unsloth_Qwen2.5-VL-3B-Instruct"
+tokenizer: 
+  add_special_tokens: true
+quantization:
+  is_quantize: false
+  quantization_config:
+    load_in_4bit: false
+    load_in_8bit: false
+dtype: float16
+instruct_template: "vivqa_instruct_prompt_v1.jinja"
+generation_config:
+  random_state: 59
+  do_sample: false
+  batch_size: 1
+  max_new_tokens: 64
+  temperature: 0.1
+  top_p: 0.9
+  top_k: 50

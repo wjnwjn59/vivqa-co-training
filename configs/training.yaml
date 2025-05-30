@@ -1,0 +1,28 @@
+# Training configuration for supervised-finetuning VLM using Unsloth
+# Every parameters in this file is aligned with Unsloth naming convention
+trainer_config:
+  per_device_train_batch_size: 32
+  gradient_accumulation_steps: 1
+  learning_rate: 0.0002
+  weight_decay: 0.01
+  warmup_steps: 5
+  # num_train_epochs: 1
+  max_steps: 500
+  logging_strategy: steps
+  logging_steps: 100
+  fp16: true
+  bf16: false 
+  optim: adamw_8bit
+  lr_scheduler_type: linear
+  seed: 59
+  output_dir: training_outputs
+  report_to: none
+  remove_unused_columns: false
+  dataset_text_field: ""
+  dataset_kwargs:
+    skip_prepare_dataset: true
+  dataset_num_proc: 4
+  max_seq_length: 2048
+is_save_model: true
+data_collator_choice: "custom"
+save_name: "sft-vivqa"

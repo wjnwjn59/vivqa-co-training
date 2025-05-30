@@ -1,0 +1,16 @@
+# Lora configuration (if enable) for PEFT VLM using Unsloth
+# Every parameters in this file is aligned with Unsloth naming convention
+is_lora: true
+lora_config:
+  r: 16         
+  lora_alpha: 16
+  lora_dropout: 0
+  bias: "none"
+  loftq_config: None
+  use_rslora: False
+  target_modules: ["q_proj", "v_proj"]
+  finetune_vision_layers: True
+  finetune_language_layers: True
+  finetune_attention_modules: True
+  finetune_mlp_modules: True
+  random_state: 59

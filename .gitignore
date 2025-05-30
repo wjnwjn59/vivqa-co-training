@@ -1,0 +1,8 @@
+__MACOSX
+.DS_Store
+__pycache__
+weights/
+unsloth_compiled_cache/
+training_outputs/
+sft-vivqa/
+logs/
